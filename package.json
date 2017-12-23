@@ -17,7 +17,7 @@
 		"pack": "electron-builder --dir",
 		"dist": "electron-builder --mac --linux --win && npm run appx",
 		"dist:windows": "electron-builder --win",
-		"appx": "node build/appx.js"
+		"appx": "powershell.exe build/appx.ps1 -noprofile"
 	},
 	"dependencies": {
 		"electron-context-menu": "^0.8.0",
