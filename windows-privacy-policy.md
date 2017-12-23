@@ -3,6 +3,7 @@
 This Application collects some Personal Data from its Users.
 
 Nozzlegear Software - P.O Box 54, Sibley, Iowa, 51249
+
 joshua@nozzlegear.com
 
 ### Types of Data collected
