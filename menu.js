@@ -60,7 +60,13 @@ const viewSubmenu = [
 
 const helpSubmenu = [
 	{
-		label: `${appName} Website`,
+		label: `Website`,
+		click() {
+			shell.openExternal('https://sindresorhus.com/caprine');
+		}
+	},
+	{
+		label: `Source Code`,
 		click() {
 			shell.openExternal('https://github.com/sindresorhus/caprine');
 		}
@@ -135,6 +141,14 @@ const macosTpl = [
 				checked: config.get('bounceDockOnMessage'),
 				click() {
 					config.set('bounceDockOnMessage', !config.get('bounceDockOnMessage'));
+				}
+			},
+			{
+				label: 'Mute Notifications',
+				type: 'checkbox',
+				checked: config.get('notificationsMuted'),
+				click() {
+					sendAction('toggle-mute-notifications');
 				}
 			},
 			{
@@ -444,6 +458,14 @@ const otherTpl = [
 				}
 			},
 			{
+				label: 'Mute Notifications',
+				type: 'checkbox',
+				checked: config.get('notificationsMuted'),
+				click() {
+					sendAction('toggle-mute-notifications');
+				}
+			},
+			{
 				type: 'checkbox',
 				label: 'Block Seen Indicator',
 				checked: config.get('block.chatSeen'),
@@ -457,6 +479,16 @@ const otherTpl = [
 				checked: config.get('block.typingIndicator'),
 				click(item) {
 					config.set('block.typingIndicator', item.checked);
+				}
+			},
+			{
+				type: 'checkbox',
+				label: 'Auto Hide Menu Bar',
+				checked: config.get('autoHideMenuBar'),
+				click(item, focusedWindow) {
+					config.set('autoHideMenuBar', item.checked);
+					focusedWindow.setAutoHideMenuBar(item.checked);
+					focusedWindow.setMenuBarVisibility(!item.checked);
 				}
 			},
 			{

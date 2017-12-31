@@ -13,7 +13,7 @@ const tray = require('./tray');
 
 const domain = config.get('useWorkChat') ? 'facebook.com' : 'messenger.com';
 
-const {app, ipcMain} = electron;
+const {app, ipcMain, Menu} = electron;
 
 app.setAppUserModelId('com.sindresorhus.caprine');
 app.disableHardwareAcceleration();
@@ -25,6 +25,7 @@ require('electron-context-menu')();
 let mainWindow;
 let isQuitting = false;
 let prevMessageCount = 0;
+let dockMenu;
 
 const isAlreadyRunning = app.makeSingleInstance(() => {
 	if (mainWindow) {
@@ -46,7 +47,7 @@ function updateBadge(title, titlePrefix) {
 		return;
 	}
 
-	let messageCount = (/\(([0-9]+)\)/).exec(title);
+	let messageCount = (/\((\d+)\)/).exec(title);
 	messageCount = messageCount ? Number(messageCount[1]) : 0;
 
 	if (process.platform === 'darwin' || process.platform === 'linux') {
@@ -136,6 +137,20 @@ function setUserLocale() {
 	electron.session.defaultSession.cookies.set(cookie, () => {});
 }
 
+function setNotificationsMute(status) {
+	const label = 'Mute Notifications';
+	const muteMenuItem = Menu.getApplicationMenu().items[0].submenu.items
+		.find(x => x.label === label);
+
+	config.set('notificationsMuted', status);
+	muteMenuItem.checked = status;
+
+	if (process.platform === 'darwin') {
+		const item = dockMenu.items.find(x => x.label === label);
+		item.checked = status;
+	}
+}
+
 function createMainWindow() {
 	const lastWindowState = config.get('lastWindowState');
 	const isDarkMode = config.get('darkMode');
@@ -156,7 +171,7 @@ function createMainWindow() {
 		alwaysOnTop: config.get('alwaysOnTop'),
 		// Temp workaround for macOS High Sierra, see #295
 		titleBarStyle: process.platform === 'darwin' && Number(require('os').release().split('.')[0]) >= 17 ? null : 'hidden-inset',
-		autoHideMenuBar: true,
+		autoHideMenuBar: config.get('autoHideMenuBar'),
 		darkTheme: isDarkMode, // GTK+3
 		webPreferences: {
 			preload: path.join(__dirname, 'browser.js'),
@@ -215,6 +230,20 @@ app.on('ready', () => {
 	mainWindow = createMainWindow();
 	tray.create(mainWindow);
 
+	if (process.platform === 'darwin') {
+		dockMenu = electron.Menu.buildFromTemplate([
+			{
+				label: 'Mute Notifications',
+				type: 'checkbox',
+				checked: config.get('notificationsMuted'),
+				click() {
+					mainWindow.webContents.send('toggle-mute-notifications');
+				}
+			}
+		]);
+		app.dock.setMenu(dockMenu);
+	}
+
 	enableHiresResources();
 
 	const {webContents} = mainWindow;
@@ -256,16 +285,20 @@ app.on('ready', () => {
 		} else {
 			mainWindow.show();
 		}
+
+		mainWindow.webContents.send('toggle-mute-notifications', config.get('notificationsMuted'));
 	});
 
-	webContents.on('new-window', (e, url, frameName, disposition, options) => {
-		e.preventDefault();
+	webContents.on('new-window', (event, url, frameName, disposition, options) => {
+		event.preventDefault();
+
 		if (url === 'about:blank') {
-			if (frameName !== 'about:blank') {  // Voice/video call popup
+			if (frameName !== 'about:blank') { // Voice/video call popup
 				options.show = true;
 				options.titleBarStyle = 'default';
-				options.webPreferences.sandbox = true;
-				e.newGuest = new electron.BrowserWindow(options);
+				options.webPreferences.nodeIntegration = false;
+				options.webPreferences.preload = path.join(__dirname, 'browser-call.js');
+				event.newGuest = new electron.BrowserWindow(options);
 			}
 		} else {
 			if (url.startsWith(trackingUrlPrefix)) {
@@ -283,6 +316,10 @@ ipcMain.on('set-vibrancy', () => {
 	} else {
 		mainWindow.setVibrancy(null);
 	}
+});
+
+ipcMain.on('mute-notifications-toggled', (event, status) => {
+	setNotificationsMute(status);
 });
 
 app.on('activate', () => {
