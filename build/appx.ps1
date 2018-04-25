@@ -10,8 +10,8 @@ $password = "$ENV:WINSTORE_CERT_PASSWORD"
 # Once installed, export the certificate to the destination specified below by right clicking the certificate -> All Tasks -> Export. You'll need to export it as a PFX with the password.
 
 # The following downloads are needed for conversion. Make sure you update the paths below if necessary.
-# Download Windows 10 SDK: https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk
-# Download Windows 10 BaseImage (***must match SDK version***): https://www.microsoft.com/en-us/download/details.aspx?id=56049
+# Download Windows 10 SDK (***probably already installed if you have Visual Studio***): https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk
+# Download Windows 10 BaseImage (***must match SDK version***): https://www.microsoft.com/en-us/software-download/dac
 # Download DesktopAppConverter: https://www.microsoft.com/en-us/store/p/desktop-app-converter/9nblggh4skzw
 
 if (!$password) {
