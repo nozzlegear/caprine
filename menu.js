@@ -3,19 +3,10 @@ const os = require('os');
 const path = require('path');
 const electron = require('electron');
 const config = require('./config');
+const {sendAction} = require('./util');
 
-const {app, BrowserWindow, shell} = electron;
+const {app, shell} = electron;
 const appName = app.getName();
-
-function sendAction(action) {
-	const [win] = BrowserWindow.getAllWindows();
-
-	if (process.platform === 'darwin') {
-		win.restore();
-	}
-
-	win.webContents.send(action);
-}
 
 const viewSubmenu = [
 	{
@@ -40,20 +31,55 @@ const viewSubmenu = [
 		}
 	},
 	{
-		type: 'separator'
-	},
-	{
 		label: 'Toggle Sidebar',
+		position: 'endof=toggle',
 		accelerator: 'CmdOrCtrl+Shift+S',
 		click() {
 			sendAction('toggle-sidebar');
 		}
 	},
 	{
+		label: 'Show Message Buttons',
+		type: 'checkbox',
+		checked: config.get('showMessageButtons'),
+		click() {
+			config.set('showMessageButtons', !config.get('showMessageButtons'));
+			sendAction('toggle-message-buttons');
+		}
+	},
+	{
 		label: 'Toggle Dark Mode',
+		position: 'endof=toggle',
 		accelerator: 'CmdOrCtrl+D',
 		click() {
 			sendAction('toggle-dark-mode');
+		}
+	},
+	{
+		type: 'separator'
+	},
+	{
+		label: 'Show Active Contacts',
+		click() {
+			sendAction('show-active-contacts-view');
+		}
+	},
+	{
+		label: 'Show Message Requests',
+		click() {
+			sendAction('show-message-requests-view');
+		}
+	},
+	{
+		label: 'Show Archived Threads',
+		click() {
+			sendAction('show-archived-threads-view');
+		}
+	},
+	{
+		label: 'Toggle Unread Threads',
+		click() {
+			sendAction('toggle-unread-threads-view');
 		}
 	}
 ];
@@ -69,6 +95,12 @@ const helpSubmenu = [
 		label: `Source Code`,
 		click() {
 			shell.openExternal('https://github.com/sindresorhus/caprine');
+		}
+	},
+	{
+		label: `Donate…`,
+		click() {
+			shell.openExternal('https://sindresorhus.com/donate');
 		}
 	},
 	{
@@ -92,6 +124,7 @@ ${process.platform} ${process.arch} ${os.release()}`;
 if (process.platform === 'darwin') {
 	viewSubmenu.push({
 		label: 'Toggle Vibrancy',
+		position: 'endof=toggle',
 		click() {
 			sendAction('toggle-vibrancy');
 		}
@@ -307,9 +340,16 @@ const macosTpl = [
 			},
 			{
 				label: 'Find Conversation',
-				accelerator: 'Cmd+F',
+				accelerator: 'Cmd+K',
 				click() {
 					sendAction('find');
+				}
+			},
+			{
+				label: 'Search Conversation',
+				accelerator: 'Cmd+F',
+				click() {
+					sendAction('search');
 				}
 			},
 			{
@@ -324,6 +364,13 @@ const macosTpl = [
 				accelerator: 'Cmd+E',
 				click() {
 					sendAction('insert-emoji');
+				}
+			},
+			{
+				label: 'Insert Text',
+				accelerator: 'Cmd+I',
+				click() {
+					sendAction('insert-text');
 				}
 			},
 			{
@@ -386,9 +433,16 @@ const otherTpl = [
 			},
 			{
 				label: 'Find Conversation',
-				accelerator: 'Ctrl+F',
+				accelerator: 'Ctrl+K',
 				click() {
 					sendAction('find');
+				}
+			},
+			{
+				label: 'Search Conversation',
+				accelerator: 'Ctrl+F',
+				click() {
+					sendAction('search');
 				}
 			},
 			{
@@ -403,6 +457,13 @@ const otherTpl = [
 				accelerator: 'Ctrl+E',
 				click() {
 					sendAction('insert-emoji');
+				}
+			},
+			{
+				label: 'Insert Text',
+				accelerator: 'Ctrl+I',
+				click() {
+					sendAction('insert-text');
 				}
 			},
 			{

@@ -92,6 +92,12 @@ html.sidebar-hidden ._1enh {
 ._fl2 {
 	padding: 3px 8px !important;
 }
+
+/* Vertically center chat options */
+._fl2 {
+	padding-bottom: 8px !important;
+}
+
 /* Adjust `To` field for narrower titlebar */
 ._2y8y {
 	min-height: 40px !important;
@@ -103,8 +109,33 @@ html.sidebar-hidden ._1enh {
 	display: none;
 }
 
-/* Move the contextual back button so it's not obstructed by the native traffic lights */
-._30yy._2oc9 {
+/* Message box: fix video width */
+._3zvs._5z-5 {
+	width: 100% !important;
+}
+._2poz._52mr._ui9._2n8h._2n8i._5fk1 {
+	width: 100% !important;
+}
+._ccq._4tsk._3o67._52mr._4-od {
+	width: 100% !important;
+}
+._1c_u {
+	width: 100% !important;
+}
+._53j5 {
+	width: 100% !important;
+}
+._ox1._21y0 {
+	width: 100% !important;
+}
+
+/* Message box: hide bottom white line */
+.fbNubFlyoutAttachments {
+	display: none !important;
+}
+
+/* macOS: Move the contextual back button so it's not obstructed by the native traffic lights */
+.os-darwin ._30yy._2oc9 {
 	margin-left: 65px !important;
 }
 
@@ -124,6 +155,11 @@ html.sidebar-hidden ._1enh {
 
 	/* `New Conversation` icon */
 	._30yy[href='/new'] {
+		display: none !important;
+	}
+
+	/* Hide right sidebar in compact mode */
+	._4_j5 {
 		display: none !important;
 	}
 }
@@ -207,3 +243,8 @@ a,
 ._wu0 .token.important   { color: var(--code-block-keyword) !important }
 ._wu0 .token.italic      { color: var(--code-block-keyword) !important; font-style: italic; }
 ._wu0 .token.function    { color: var(--code-block-function) !important }
+
+/* Hide hidden accessibility elements so they're not included in copy-pasting of chat logs */
+.accessible_elem {
+	display: none !important;
+}

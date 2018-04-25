@@ -11,6 +11,8 @@ const appMenu = require('./menu');
 const config = require('./config');
 const tray = require('./tray');
 
+require('./touch-bar'); // eslint-disable-line import/no-unassigned-import
+
 require('electron-debug')({enabled: true});
 require('electron-dl')();
 require('electron-context-menu')();
@@ -279,13 +281,14 @@ app.on('ready', () => {
 			webContents.insertCSS(fs.readFileSync(path.join(__dirname, 'workchat.css'), 'utf8'));
 		}
 
-		if (config.get('launchMinimized')) {
+		if (config.get('launchMinimized') || app.getLoginItemSettings().wasOpenedAsHidden) {
 			mainWindow.hide();
 		} else {
 			mainWindow.show();
 		}
 
 		mainWindow.webContents.send('toggle-mute-notifications', config.get('notificationsMuted'));
+		mainWindow.webContents.send('toggle-message-buttons', config.get('showMessageButtons'));
 	});
 
 	webContents.on('new-window', (event, url, frameName, disposition, options) => {

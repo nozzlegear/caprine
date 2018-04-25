@@ -1,5 +1,6 @@
 'use strict';
 const electron = require('electron');
+const elementReady = require('element-ready');
 const config = require('./config');
 
 const {ipcRenderer: ipc} = electron;
@@ -8,12 +9,38 @@ const listSelector = 'div[role="navigation"] > div > ul';
 const conversationSelector = '._4u-c._1wfr > ._5f0v.uiScrollableArea';
 const selectedConversationSelector = '._5l-3._1ht1._1ht2';
 
-ipc.on('show-preferences', () => {
+function showSettingsMenu() {
+	document.querySelector('._30yy._2fug._p').click();
+}
+
+function selectMenuItem(itemNumber) {
+	const selector = document.querySelector(`._54nq._2i-c._558b._2n_z li:nth-child(${itemNumber}) a`);
+	selector.click();
+}
+
+function selectOtherListViews(itemNumber) {
+	// In case one of other views is shown
+	clickBackButton();
+
+	// Create the menu for the below
+	showSettingsMenu();
+
+	selectMenuItem(itemNumber);
+}
+
+function clickBackButton() {
+	const backButton = document.querySelector('._30yy._2oc9');
+	if (backButton) {
+		backButton.click();
+	}
+}
+
+ipc.on('show-preferences', async () => {
 	if (isPreferencesOpen()) {
 		return;
 	}
 
-	openPreferences();
+	await openPreferences();
 });
 
 ipc.on('new-conversation', () => {
@@ -30,7 +57,7 @@ ipc.on('log-out', () => {
 			nodes[nodes.length - 1].click();
 		}, 250);
 	} else {
-		document.querySelector('._30yy._2fug._p').click();
+		showSettingsMenu();
 		const nodes = document.querySelectorAll('._54nq._2i-c._558b._2n_z li:last-child a');
 		nodes[nodes.length - 1].click();
 	}
@@ -40,12 +67,20 @@ ipc.on('find', () => {
 	document.querySelector('._58al').focus();
 });
 
+ipc.on('search', () => {
+	document.querySelector('._3szn:nth-of-type(1)').click();
+});
+
 ipc.on('insert-gif', () => {
 	document.querySelector('._yht').click();
 });
 
 ipc.on('insert-emoji', () => {
 	document.querySelector('._5s2p').click();
+});
+
+ipc.on('insert-text', () => {
+	document.querySelector('._5rpu').focus();
 });
 
 ipc.on('next-conversation', nextConversation);
@@ -69,11 +104,11 @@ function setSidebarVisibility() {
 	ipc.send('set-sidebar-visibility');
 }
 
-ipc.on('toggle-mute-notifications', (event, defaultStatus) => {
+ipc.on('toggle-mute-notifications', async (event, defaultStatus) => {
 	const wasPreferencesOpen = isPreferencesOpen();
 
 	if (!wasPreferencesOpen) {
-		openPreferences();
+		await openPreferences();
 	}
 
 	const notificationCheckbox = document.querySelector('._374b:nth-of-type(3) ._55sg._4ng2._kv1 input');
@@ -89,6 +124,27 @@ ipc.on('toggle-mute-notifications', (event, defaultStatus) => {
 	if (!wasPreferencesOpen) {
 		closePreferences();
 	}
+});
+
+ipc.on('toggle-message-buttons', async () => {
+	const messageButtons = await elementReady('._39bj');
+	messageButtons.style.display = config.get('showMessageButtons') ? 'flex' : 'none';
+});
+
+ipc.on('show-active-contacts-view', () => {
+	selectOtherListViews(3);
+});
+
+ipc.on('show-message-requests-view', () => {
+	selectOtherListViews(4);
+});
+
+ipc.on('show-archived-threads-view', () => {
+	selectOtherListViews(5);
+});
+
+ipc.on('toggle-unread-threads-view', () => {
+	selectOtherListViews(6);
 });
 
 function setDarkMode() {
@@ -157,6 +213,10 @@ ipc.on('zoom-out', () => {
 	if (zoomFactor >= 0.8) {
 		setZoom(zoomFactor);
 	}
+});
+
+ipc.on('jump-to-conversation', (event, index) => {
+	jumpToConversation(index);
 });
 
 function nextConversation() {
@@ -230,8 +290,7 @@ function openMuteModal() {
 		return;
 	}
 
-	const selector = '._54nq._2i-c._558b._2n_z li:nth-child(1) a';
-	document.querySelector(selector).click();
+	selectMenuItem(1);
 }
 
 function openArchiveModal() {
@@ -239,8 +298,7 @@ function openArchiveModal() {
 		return;
 	}
 
-	const selector = '._54nq._2i-c._558b._2n_z li:nth-child(3) a';
-	document.querySelector(selector).click();
+	selectMenuItem(3);
 }
 
 function openDeleteModal() {
@@ -248,16 +306,14 @@ function openDeleteModal() {
 		return;
 	}
 
-	const selector = '._54nq._2i-c._558b._2n_z li:nth-child(4) a';
-	document.querySelector(selector).click();
+	selectMenuItem(4);
 }
 
-function openPreferences() {
+async function openPreferences() {
 	// Create the menu for the below
-	document.querySelector('._30yy._2fug._p').click();
+	(await elementReady('._30yy._2fug._p')).click();
 
-	const nodes = document.querySelectorAll('._54nq._2i-c._558b._2n_z li:first-child a');
-	nodes[nodes.length - 1].click();
+	selectMenuItem(1);
 }
 
 function isPreferencesOpen() {
@@ -269,6 +325,39 @@ function closePreferences() {
 	doneButton.click();
 }
 
+function initTouchBar() {
+	const sidebar = document.querySelector('[role=navigation]');
+
+	const sendTouchBar = () => {
+		const conversations = [];
+		for (const el of sidebar.querySelectorAll('._1ht1')) {
+			conversations.push({
+				label: el.querySelector('._1ht6').textContent,
+				selected: el.classList.contains('_1ht2'),
+				unread: el.classList.contains('_1ht3')
+			});
+
+			if (conversations.length >= 15) {
+				break;
+			}
+		}
+
+		if (conversations.length > 0) {
+			ipc.send('touch-bar', conversations);
+		}
+	};
+
+	sendTouchBar();
+
+	const conversationListObserver = new MutationObserver(sendTouchBar);
+	conversationListObserver.observe(sidebar, {
+		subtree: true,
+		childList: true,
+		attributes: true,
+		attributeFilter: ['class']
+	});
+}
+
 // Inject a global style node to maintain custom appearance after conversation change or startup
 document.addEventListener('DOMContentLoaded', () => {
 	const style = document.createElement('style');
@@ -278,6 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Set the zoom factor if it was set before quitting
 	const zoomFactor = config.get('zoomFactor') || 1.0;
 	setZoom(zoomFactor);
+
+	// Enable OS specific styles
+	document.documentElement.classList.add(`os-${process.platform}`);
 
 	// Hide sidebar if it was hidden before quitting
 	setSidebarVisibility();
@@ -293,6 +385,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Activate vibrancy effect if it was set before quitting
 	setVibrancy();
+});
+
+window.addEventListener('load', () => {
+	initTouchBar();
 });
 
 // It's not possible to add multiple accelerators
